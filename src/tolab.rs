@@ -71,12 +71,12 @@ impl ToLABBitmap for GBitmap {
             let start = y * self.stride();
             let in_row = &self.buf()[start..start + width];
             let out_row = &mut out_row[0..width];
-            let epsilon: f64 = 216. / 24389.;
+            let epsilon: f64 = 216_f64 / 24389_f64;
             for x in 0..width {
                 let fy = in_row[x];
                 // http://www.brucelindbloom.com/LContinuity.html
-                let Y = if fy > epsilon { fy.powf(1. / 3.) - 16. / 116. } else { ((24389. / 27.) / 116.) * fy };
-                out_row[x] = Y * 1.16;
+                let Y = if fy > epsilon { fy.powf(1_f64 / 3_f64) - 16_f64 / 116_f64 } else { ((24389_f64 / 27_f64) / 116_f64) * fy };
+                out_row[x] = Y * 1.16_f64
             }
         });
 

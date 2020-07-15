@@ -348,8 +348,8 @@ impl Dssim {
         let width = original.width;
         let height = original.height;
 
-        let c1 = 0.01 * 0.01;
-        let c2 = 0.03 * 0.03;
+        let c1 = 0.01_f64 * 0.01_f64;
+        let c2 = 0.03_f64 * 0.03_f64;
 
         let mut map_out = Vec::with_capacity(width * height);
         unsafe { map_out.set_len(width * height) };
@@ -377,7 +377,7 @@ impl Dssim {
             let sigma1_sq = sigma1_sq.abs();
             let sigma2_sq = sigma2_sq.abs();
 
-            *map_out = (2. * mu1_mu2 + c1) * (2. * sigma12 + c2) /
+            *map_out = (2_f64 * mu1_mu2 + c1) * (2_f64 * sigma12 + c2) /
                        ((mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2));
         });
 
