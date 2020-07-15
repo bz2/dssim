@@ -4,17 +4,17 @@ use std;
 use rgb::*;
 use imgref::*;
 
-/// RGBA, but: premultiplied alpha, linear, f32 unit scale 0..1
-pub type RGBAPLU = RGBA<f32>;
-/// RGB, but linear, f32 unit scale 0..1
-pub type RGBLU = RGB<f32>;
+/// RGBA, but: premultiplied alpha, linear, f64 unit scale 0..1
+pub type RGBAPLU = RGBA<f64>;
+/// RGB, but linear, f64 unit scale 0..1
+pub type RGBLU = RGB<f64>;
 
 /// L\*a\*b\*b, but using float units (values are 100× smaller than in usual integer representation)
 #[derive(Debug, Copy, Clone)]
 pub struct LAB {
-    pub l: f32,
-    pub a: f32,
-    pub b: f32,
+    pub l: f64,
+    pub a: f64,
+    pub b: f64,
 }
 
 impl std::ops::Mul<LAB> for LAB {
@@ -28,7 +28,7 @@ impl std::ops::Mul<LAB> for LAB {
     }
 }
 
-impl std::ops::Mul<LAB> for f32 {
+impl std::ops::Mul<LAB> for f64 {
     type Output = LAB;
     fn mul(self, other: LAB) -> Self::Output {
         LAB {
@@ -39,9 +39,9 @@ impl std::ops::Mul<LAB> for f32 {
     }
 }
 
-impl std::ops::Mul<f32> for LAB {
+impl std::ops::Mul<f64> for LAB {
     type Output = LAB;
-    fn mul(self, other: f32) -> Self::Output {
+    fn mul(self, other: f64) -> Self::Output {
         LAB {
             l: self.l * other,
             a: self.a * other,
@@ -61,9 +61,9 @@ impl std::ops::Add<LAB> for LAB {
     }
 }
 
-impl std::ops::Add<f32> for LAB {
+impl std::ops::Add<f64> for LAB {
     type Output = LAB;
-    fn add(self, other: f32) -> Self::Output {
+    fn add(self, other: f64) -> Self::Output {
         LAB {
             l: self.l + other,
             a: self.a + other,
@@ -84,7 +84,7 @@ impl std::ops::Sub<LAB> for LAB {
 }
 
 impl LAB {
-    pub(crate) fn avg(&self) -> f32 {
+    pub(crate) fn avg(&self) -> f64 {
         (self.l + self.a + self.b) / 3.0
     }
 }
@@ -92,12 +92,6 @@ impl LAB {
 impl From<LAB> for f64 {
     fn from(other: LAB) -> f64 {
         other.avg() as f64
-    }
-}
-
-impl From<LAB> for f32 {
-    fn from(other: LAB) -> f32 {
-        other.avg()
     }
 }
 
@@ -119,7 +113,7 @@ pub trait Average4 {
     fn average4(a: Self, b: Self, c: Self, d: Self) -> Self;
 }
 
-impl Average4 for f32 {
+impl Average4 for f64 {
     fn average4(a: Self, b: Self, c: Self, d: Self) -> Self {
         (a + b + c + d) * 0.25
     }
@@ -222,7 +216,7 @@ impl<'a, T> Downsample for ImgRef<'a, T> where T: Average4 + Copy + Sync + Send 
 }
 
 #[allow(dead_code)]
-pub(crate) fn worst(input: ImgRef<'_, f32>) -> ImgVec<f32> {
+pub(crate) fn worst(input: ImgRef<'_, f64>) -> ImgVec<f64> {
     let stride = input.stride();
     let half_height = input.height() / 2;
     let half_width = input.width() / 2;
@@ -247,7 +241,7 @@ pub(crate) fn worst(input: ImgRef<'_, f32>) -> ImgVec<f32> {
 }
 
 #[allow(dead_code)]
-pub(crate) fn avgworst(input: ImgRef<'_, f32>) -> ImgVec<f32> {
+pub(crate) fn avgworst(input: ImgRef<'_, f64>) -> ImgVec<f64> {
     let stride = input.stride();
     let half_height = input.height() / 2;
     let half_width = input.width() / 2;
@@ -272,7 +266,7 @@ pub(crate) fn avgworst(input: ImgRef<'_, f32>) -> ImgVec<f32> {
 }
 
 #[allow(dead_code)]
-pub(crate) fn avg(input: ImgRef<'_, f32>) -> ImgVec<f32> {
+pub(crate) fn avg(input: ImgRef<'_, f64>) -> ImgVec<f64> {
     let stride = input.stride();
     let half_height = input.height() / 2;
     let half_width = input.width() / 2;

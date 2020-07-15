@@ -11,13 +11,13 @@ const D65x: f64 = 0.9505;
 const D65y: f64 = 1.0;
 const D65z: f64 = 1.089;
 
-pub type GBitmap = ImgVec<f32>;
+pub type GBitmap = ImgVec<f64>;
 pub(crate) trait ToLAB {
-    fn to_lab(&self) -> (f32, f32, f32);
+    fn to_lab(&self) -> (f64, f64, f64);
 }
 
 impl ToLAB for RGBLU {
-    fn to_lab(&self) -> (f32, f32, f32) {
+    fn to_lab(&self) -> (f64, f64, f64) {
         let fx = (self.r as f64 * 0.4124 + self.g as f64 * 0.3576 + self.b as f64 * 0.1805) / D65x;
         let fy = (self.r as f64 * 0.2126 + self.g as f64 * 0.7152 + self.b as f64 * 0.0722) / D65y;
         let fz = (self.r as f64 * 0.0193 + self.g as f64 * 0.1192 + self.b as f64 * 0.9505) / D65z;
@@ -29,9 +29,9 @@ impl ToLAB for RGBLU {
         let Z = if fz > epsilon {fz.powf(1./3.) - 16./116.} else {k * fz};
 
         return (
-            (Y * 1.16) as f32,
-            ((86.2/ 220.0 + 500.0/ 220.0 * (X - Y))) as f32, /* 86 is a fudge to make the value positive */
-            ((107.9/ 220.0 + 200.0/ 220.0 * (Y - Z))) as f32, /* 107 is a fudge to make the value positive */
+            (Y * 1.16) as f64,
+            ((86.2/ 220.0 + 500.0/ 220.0 * (X - Y))) as f64, /* 86 is a fudge to make the value positive */
+            ((107.9/ 220.0 + 200.0/ 220.0 * (Y - Z))) as f64, /* 107 is a fudge to make the value positive */
         );
     }
 }
@@ -71,7 +71,7 @@ impl ToLABBitmap for GBitmap {
             let start = y * self.stride();
             let in_row = &self.buf()[start..start + width];
             let out_row = &mut out_row[0..width];
-            let epsilon: f32 = 216. / 24389.;
+            let epsilon: f64 = 216. / 24389.;
             for x in 0..width {
                 let fy = in_row[x];
                 // http://www.brucelindbloom.com/LContinuity.html
@@ -85,7 +85,7 @@ impl ToLABBitmap for GBitmap {
 }
 
 fn rgb_to_lab<'a, T: Copy + Sync + Send + 'static, F>(img: ImgRef<'a, T>, cb: F) -> Vec<GBitmap>
-    where F: Fn(T, usize) -> (f32, f32, f32) + Sync + Send + 'static
+    where F: Fn(T, usize) -> (f64, f64, f64) + Sync + Send + 'static
 {
     let width = img.width();
     let height = img.height();

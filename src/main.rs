@@ -36,7 +36,7 @@ fn usage(argv0: &str) {
        \nVersion {} https://kornel.ski/dssim\n", argv0, argv0, env!("CARGO_PKG_VERSION"));
 }
 
-fn to_byte(i: f32) -> u8 {
+fn to_byte(i: f64) -> u8 {
     if i <= 0.0 {0}
     else if i >= 255.0/256.0 {255}
     else {(i * 256.0) as u8}
@@ -122,14 +122,14 @@ fn main() {
 
         if map_output_file.is_some() {
             ssim_maps.par_iter().enumerate().for_each(|(n, map_meta)| {
-                let avgssim = map_meta.ssim as f32;
+                let avgssim = map_meta.ssim as f64;
                 let out: Vec<_> = map_meta.map.pixels().map(|ssim|{
-                    let max = 1_f32 - ssim;
+                    let max = 1_f64 - ssim;
                     let maxsq = max * max;
                     rgb::RGBA8 {
-                        r: to_byte(maxsq * 16.0),
-                        g: to_byte(max * 3.0),
-                        b: to_byte(max / ((1_f32 - avgssim) * 4_f32)),
+                        r: to_byte(maxsq * 16.0_f64),
+                        g: to_byte(max * 3.0_f64),
+                        b: to_byte(max / ((1_f64 - avgssim) * 4_f64)),
                         a: 255,
                     }
                 }).collect();

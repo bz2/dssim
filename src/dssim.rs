@@ -71,7 +71,7 @@ const DEFAULT_WEIGHTS: [f64; 5] = [0.0448, 0.2856, 0.3001, 0.2363, 0.1333];
 #[derive(Clone)]
 pub struct SsimMap {
     /// SSIM scores
-    pub map: ImgVec<f32>,
+    pub map: ImgVec<f64>,
     /// Average SSIM (not DSSIM)
     pub ssim: f64,
 }
@@ -94,8 +94,8 @@ impl<T> DssimChan<T> {
     }
 }
 
-impl DssimChan<f32> {
-    fn preprocess(&mut self, tmp: &mut [f32]) {
+impl DssimChan<f64> {
+    fn preprocess(&mut self, tmp: &mut [f64]) {
         let width = self.width;
         let height = self.height;
         assert!(width > 0);
@@ -123,8 +123,8 @@ impl DssimChan<f32> {
     }
 }
 
-impl Channable<LAB, f32> for [DssimChan<f32>] {
-    fn img1_img2_blur(&self, modified: &Self, tmp32: &mut [f32]) -> Vec<LAB> {
+impl Channable<LAB, f64> for [DssimChan<f64>] {
+    fn img1_img2_blur(&self, modified: &Self, tmp32: &mut [f64]) -> Vec<LAB> {
 
         let blurred:Vec<_> = self.iter().zip(modified.iter()).map(|(o,m)|{
             o.img1_img2_blur(m, tmp32)
@@ -136,8 +136,8 @@ impl Channable<LAB, f32> for [DssimChan<f32>] {
     }
 }
 
-impl Channable<f32, f32> for DssimChan<f32> {
-    fn img1_img2_blur(&self, modified: &Self, tmp32: &mut [f32]) -> Vec<f32> {
+impl Channable<f64, f64> for DssimChan<f64> {
+    fn img1_img2_blur(&self, modified: &Self, tmp32: &mut [f64]) -> Vec<f64> {
         let modified_img = modified.img.as_ref().unwrap();
         let width = modified_img.width();
         let height = modified_img.height();
@@ -209,13 +209,13 @@ impl Dssim {
     ///
     /// * `ImgVec<RGBAPLU>` — RGBA premultiplied alpha, float scaled to 0..1
     /// * `ImgVec<RGBLU>` — RGBA float scaled to 0..1
-    /// * `ImgVec<f32>` — linear light grayscale, float scaled to 0..1
+    /// * `ImgVec<f64>` — linear light grayscale, float scaled to 0..1
     ///
     /// And there's `ToRGBAPLU` (`.to_rgbaplu()`) helper to convert the input pixels from
     /// `[RGBA<u8>]`, `[RGBA<u16>]`, `[RGB<u8>]`, or `RGB<u16>`. See `main.rs` for example how it's done.
     ///
     /// You can implement `ToLABBitmap` and `Downsample` traits on your own image type.
-    pub fn create_image<InBitmap, OutBitmap>(&self, src_img: &InBitmap) -> Option<DssimImage<f32>>
+    pub fn create_image<InBitmap, OutBitmap>(&self, src_img: &InBitmap) -> Option<DssimImage<f64>>
         where InBitmap: ToLABBitmap + Send + Sync + Downsample<Output = OutBitmap>,
               OutBitmap: ToLABBitmap + Send + Sync + Downsample<Output = OutBitmap>,
     {
@@ -233,7 +233,7 @@ impl Dssim {
                     chan: s.into_par_iter().enumerate().map(|(n,l)| {
                         let w = l.width();
                         let h = l.height();
-                        let mut ch = DssimChan::new(l, n > 0);
+                        let mut ch = DssimChan::<f64>::new(l, n > 0);
 
                         let mut tmp = {
                             let pixels = w * h;
@@ -255,7 +255,7 @@ impl Dssim {
     /// The `SsimMap`s are returned only if you've enabled them first.
     ///
     /// `Val` is a fancy wrapper for `f64`
-    pub fn compare<M: Borrow<DssimImage<f32>>>(&self, original_image: &DssimImage<f32>, modified_image: M) -> (Val, Vec<SsimMap>) {
+    pub fn compare<M: Borrow<DssimImage<f64>>>(&self, original_image: &DssimImage<f64>, modified_image: M) -> (Val, Vec<SsimMap>) {
         let modified_image = modified_image.borrow();
         let res: Vec<_> = self.scale_weights.par_iter().cloned().zip(
             modified_image.scale.par_iter().zip(original_image.scale.par_iter())
@@ -315,7 +315,7 @@ impl Dssim {
         return (to_dssim(ssim_sum / weight_sum).into(), ssim_maps);
     }
 
-    fn lab_chan(scale: &DssimChanScale<f32>) -> DssimChan<LAB> {
+    fn lab_chan(scale: &DssimChanScale<f64>) -> DssimChan<LAB> {
         let l = &scale.chan[0];
         let a = &scale.chan[1];
         let b = &scale.chan[2];
@@ -338,9 +338,9 @@ impl Dssim {
         }
     }
 
-    fn compare_scale<L>(original: &DssimChan<L>, modified: &DssimChan<L>, img1_img2_blur: &[L]) -> ImgVec<f32>
+    fn compare_scale<L>(original: &DssimChan<L>, modified: &DssimChan<L>, img1_img2_blur: &[L]) -> ImgVec<f64>
         where L: Send + Sync + Clone + Copy + ops::Mul<Output = L> + ops::Sub<Output = L> + 'static,
-              f32: std::convert::From<L>
+              f64: std::convert::From<L>
     {
         assert_eq!(original.width, modified.width);
         assert_eq!(original.height, modified.height);
@@ -367,12 +367,12 @@ impl Dssim {
             let mu1mu1 = mu1 * mu1;
             let mu1mu2 = mu1 * mu2;
             let mu2mu2 = mu2 * mu2;
-            let mu1_sq: f32 = mu1mu1.into();
-            let mu2_sq: f32 = mu2mu2.into();
-            let mu1_mu2: f32 = mu1mu2.into();
-            let sigma1_sq: f32 = (img1_sq_blur - mu1mu1).into();
-            let sigma2_sq: f32 = (img2_sq_blur - mu2mu2).into();
-            let sigma12: f32 = (img1_img2_blur - mu1mu2).into();
+            let mu1_sq: f64 = mu1mu1.into();
+            let mu2_sq: f64 = mu2mu2.into();
+            let mu1_mu2: f64 = mu1mu2.into();
+            let sigma1_sq: f64 = (img1_sq_blur - mu1mu1).into();
+            let sigma2_sq: f64 = (img2_sq_blur - mu2mu2).into();
+            let sigma12: f64 = (img1_img2_blur - mu1mu2).into();
 
             let sigma1_sq = sigma1_sq.abs();
             let sigma2_sq = sigma2_sq.abs();
